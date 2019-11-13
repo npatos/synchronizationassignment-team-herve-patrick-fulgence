@@ -1,5 +1,6 @@
-/*Herve Musangwa, Fulgence Muhirwa, Patrick Nsengiyumva*/
-
+// Fulgence Muhirwa | Patrick Nsengumuremyi | Herve Musangwa
+ 
+ 
 #include <pthread.h>
 #include <stdio.h>
 #include <unistd.h>
