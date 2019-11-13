@@ -5,113 +5,131 @@ Patrick Nsengiyumva*/
 #include <pthread.h>
 #include <semaphore.h>
 #include <stdio.h>
+#include <zconf.h>
 
-#define N 5
+//Grobal variables
+int philosopheNumber ;
 #define THINKING 2
 #define HUNGRY 1
 #define EATING 0
-#define LEFT (philnum + 4) % N
-#define RIGHT (philnum + 1) % N
+#define LEFT (phnum + 4) % philosopheNumber
+#define RIGHT (phnum + 1) % philosopheNumber
 
-int state[N];
-int phil[N] = {0, 1, 2, 3, 4};
+int state[];
+// Position of the pholosophers
+int phil[6] = { 0, 1, 2, 3, 4, 5};
 
 sem_t mutex;
-sem_t S[N];
+sem_t S[];
 
-void test(int philnum)
+void test(int phnum)
 {
-    if (state[philnum] == HUNGRY && state[LEFT] != EATING && state[RIGHT] != EATING)
-    {
-        // state that eating
-        state[philnum] = EATING;
+if (state[phnum] == HUNGRY
+&& state[LEFT] != EATING
+&& state[RIGHT] != EATING) {
+// state that eating
+state[phnum] = EATING;
 
-        sleep(2);
+sleep(2);
 
-        printf("Philosopher %d takes chopstick %d and %d\n",
-               philnum + 1, LEFT + 1, philnum + 1);
+printf("Philosopher %d takes fork %d and %d\n",
+phnum + 1, LEFT + 1, phnum + 1);
 
-        printf("Philosopher %d eats\n", philnum + 1);
+printf("Philosopher %d is Eating\n", phnum + 1);
 
-        sem_post(&S[philnum]);
-    }
+// sem_post(&S[phnum]) has no effect
+// during takefork
+// used to wake up hungry philosophers
+// during putfork
+sem_post(&S[phnum]);
+}
 }
 
-void take_fork(int philnum)
+// take up chopsticks
+void take_fork(int phnum)
 {
 
-    sem_wait(&mutex);
+sem_wait(&mutex);
 
-    state[philnum] = HUNGRY;
+// state that hungry
+state[phnum] = HUNGRY;
 
-    printf("Philosopher %d feels hungry\n", philnum + 1);
+printf("Philosopher %d is Hungry\n", phnum + 1);
 
-    test(philnum);
+// eat if neighbours are not eating
+test(phnum);
 
-    sem_post(&mutex);
+sem_post(&mutex);
 
-    sem_wait(&S[philnum]);
+// if unable to eat wait to be signalled
+sem_wait(&S[phnum]);
 
-    sleep(1);
+sleep(1);
 }
 
-void put_fork(int philnum)
+// put down chopsticks
+void put_fork(int phnum)
 {
 
-    sem_wait(&mutex);
+sem_wait(&mutex);
 
-    state[philnum] = THINKING;
+// state that thinking
+state[phnum] = THINKING;
 
-    printf("Philosopher %d puts chopstick %d and %d down\n",
-           philnum + 1, LEFT + 1, philnum + 1);
-    printf("Philosopher %d thinks\n", philnum + 1);
+printf("Philosopher %d putting fork %d and %d down\n",
+phnum + 1, LEFT + 1, phnum + 1);
+printf("Philosopher %d is thinking\n", phnum + 1);
 
-    test(LEFT);
-    test(RIGHT);
+test(LEFT);
+test(RIGHT);
 
-    sem_post(&mutex);
+sem_post(&mutex);
 }
 
-void *philospher(void *num)
+void* philospher(void* num)
 {
 
-    while (1)
-    {
+while (1) {
 
-        int *i = num;
+int* i = num;
 
-        sleep(1);
+sleep(1);
 
-        take_fork(*i);
+take_fork(*i);
 
-        sleep(0);
+sleep(0);
 
-        put_fork(*i);
-    }
+put_fork(*i);
+}
 }
 
 int main()
 {
 
-    int i;
-    pthread_t thread_id[N];
+int i;
+pthread_t thread_id[philosopheNumber];
 
-    sem_init(&mutex, 0, 1);
 
-    for (i = 0; i < N; i++)
+// initialize the semaphores
+sem_init(&mutex, 0, 1);
 
-        sem_init(&S[i], 0, 0);
+printf("Enter a number of philosophers\n:");
+scanf("%d",&philosopheNumber);
 
-    for (i = 0; i < N; i++)
-    {
+for (i = 0; i < philosopheNumber; i++)
 
-        pthread_create(&thread_id[i], NULL,
-                       philospher, &phil[i]);
+sem_init(&S[i], 0, 0);
 
-        printf("Philosopher %d thinks\n", i + 1);
-    }
+for (i = 0; i < philosopheNumber; i++) {
 
-    for (i = 0; i < N; i++)
+// create philosopher processes
+pthread_create(&thread_id[i], NULL,
+philospher, &phil[i]);
 
-        pthread_join(thread_id[i], NULL);
+printf("Philosopher %d is thinking\n", i + 1);
+}
+
+for (i = 0; i < philosopheNumber; i++)
+
+pthread_join(thread_id[i], NULL);
 }
